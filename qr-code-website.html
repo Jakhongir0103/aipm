@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR Code</title>
+    <style>
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+        font-family: Arial, sans-serif;
+      }
+
+      #qr-code {
+        width: 256px;
+        height: 256px;
+      }
+
+      #timestamp {
+        margin-top: 1rem;
+        font-size: 1.2rem;
+      }
+    </style>
+  </head>
+  <body>
+    <img id="qr-code" alt="QR Code" />
+    <div id="timestamp"></div>
+
+    <script>
+      const phone = "+41794864645";
+      const text = "Bonjour, quelle est votre demande ?";
+
+      function updateQRCode() {
+        const timestamp = new Date().toLocaleString();
+        const url = `https://api.whatsapp.com/send/?phone=${phone}&text=${text} ${timestamp}&type=phone_number`;
+        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(
+          url
+        )}`;
+
+        const qrCodeImg = document.getElementById("qr-code");
+        qrCodeImg.src = qrCodeUrl;
+
+        document.getElementById("timestamp").textContent = timestamp;
+      }
+      const delay = 1000 * 10; // 10 seconds
+      setInterval(updateQRCode, delay);
+      updateQRCode(); // Initialize the QR code
+    </script>
+  </body>
+</html>
