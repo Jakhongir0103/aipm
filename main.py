@@ -1,7 +1,6 @@
 import os
 import time
 import logging
-from datetime import datetime
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.error import BadRequest
