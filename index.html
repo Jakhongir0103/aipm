@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR Code</title>
+    <style>
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+        font-family: Arial, sans-serif;
+      }
+
+      #qr-code {
+        width: 256px;
+        height: 256px;
+      }
+
+      #timestamp {
+        margin-top: 1rem;
+        font-size: 1.2rem;
+      }
+    </style>
+  </head>
+  <body>
+    <img id="qr-code" alt="QR Code" />
+    <div id="timestamp"></div>
+
+    <script>
+      // Function to generate a secure token
+      function generateToken(timestamp) {
+        // Convert timestamp to a 1-minute interval (floor to nearest minute)
+        const intervalTimestamp = Math.floor(timestamp / 60000) * 60000;
+        // Convert to base36 for shorter URL
+        return intervalTimestamp.toString(36);
+      }
+
+      function updateQRCode() {
+        const now = new Date();
+        const timestamp = now.getTime();
+        const token = generateToken(timestamp);
+        
+        // Create URL with token
+        const url = `https://t.me/loyalty_coffee_bot?start=order_${token}`;
+        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(url)}`;
+
+        const qrCodeImg = document.getElementById("qr-code");
+        qrCodeImg.src = qrCodeUrl;
+
+        document.getElementById("timestamp").textContent = now.toLocaleString();
+      }
+
+      const delay = 1000 * 60; // 60 seconds
+      setInterval(updateQRCode, delay);
+      updateQRCode(); // Initialize the QR code
+    </script>
+  </body>
+</html>
