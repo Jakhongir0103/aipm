@@ -10,7 +10,7 @@ db_password = os.environ.get('MONGO_SECRET')
 uri = f"mongodb+srv://saidaliyevjahongir:{db_password}@cluster0.jwhlb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 # Create a new client and connect to the server
-client = MongoClient(uri, server_api=ServerApi('1'), tls=True, tlsInsecure=True)
+client = MongoClient(uri, server_api=ServerApi('1'), tls=True, tlsAllowInvalidCertificates=True)
 db = client["AIPM"]
 
 users_collection = db["users"] # ['whatsapp_number', 'date']
