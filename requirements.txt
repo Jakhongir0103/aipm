@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+twilio
+pymongo
+pyngrok
+requests
+python-dotenv
+python-multipart
+"qrcode[pil]"
+gridfs-fuse
+boto3
