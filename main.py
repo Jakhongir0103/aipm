@@ -4,6 +4,7 @@ import logging
 from datetime import datetime
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.error import BadRequest
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
@@ -150,10 +151,13 @@ async def check_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
             message = f"You currently have {points}/5 points. {remaining} more to go for a free coffee!\n\nTotal rewards earned: {total_rewards} ☕"
     
     # Include reply_markup in edit_message_text to keep the button
-    await query.edit_message_text(
-        text=message,
-        reply_markup=reply_markup
-    )
+    try:
+        await query.edit_message_text(
+            text=message,
+            reply_markup=reply_markup
+        )
+    except BadRequest as e:
+        logger.info(f'Error occured in `check_status`. Skipping it...\n{e}')
 
 def main():
     """Main function to run the bot"""

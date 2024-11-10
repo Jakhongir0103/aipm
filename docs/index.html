@@ -3,39 +3,131 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>QR Code</title>
+    <title>Coffee Loyalty QR</title>
     <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
       body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        background-color: #f5f5f5;
+      }
+
+      .container {
+        width: 50vw;
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
-        height: 100vh;
-        margin: 0;
-        font-family: Arial, sans-serif;
+        padding: 2rem;
+        background-color: white;
+        border-radius: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 2rem;
+        color: #2d3748;
+      }
+
+      .header h1 {
+        font-size: 1.8rem;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+      }
+
+      .header p {
+        color: #718096;
+        font-size: 1rem;
+      }
+
+      .qr-container {
+        background-color: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        margin-bottom: 1.5rem;
       }
 
       #qr-code {
-        width: 256px;
-        height: 256px;
+        width: 300px;
+        height: 300px;
+        display: block;
       }
 
       #timestamp {
+        color: #718096;
+        font-size: 0.9rem;
+        text-align: center;
+        padding: 0.5rem;
+        background-color: #f7fafc;
+        border-radius: 8px;
+        width: fit-content;
+      }
+
+      /* Progress bar for QR code refresh */
+      .progress-container {
+        width: 300px;
+        height: 4px;
+        background-color: #e2e8f0;
+        border-radius: 2px;
         margin-top: 1rem;
-        font-size: 1.2rem;
+        overflow: hidden;
+      }
+
+      .progress-bar {
+        width: 0%;
+        height: 100%;
+        background-color: #4a5568;
+        border-radius: 2px;
+        transition: width 1s linear;
+      }
+
+      /* Responsive design */
+      @media (max-width: 768px) {
+        .container {
+          width: 90vw;
+          padding: 1rem;
+        }
+
+        #qr-code {
+          width: 250px;
+          height: 250px;
+        }
+
+        .progress-container {
+          width: 250px;
+        }
       }
     </style>
   </head>
   <body>
-    <img id="qr-code" alt="QR Code" />
-    <div id="timestamp"></div>
+    <div class="container">
+      <div class="header">
+        <h1>Coffee Loyalty Program</h1>
+        <p>Scan to earn your points</p>
+      </div>
+
+      <div class="qr-container">
+        <img id="qr-code" alt="QR Code" />
+        <div class="progress-container">
+          <div id="progress-bar" class="progress-bar"></div>
+        </div>
+      </div>
+
+      <div id="timestamp"></div>
+    </div>
 
     <script>
-      // Function to generate a secure token
       function generateToken(timestamp) {
-        // Convert timestamp to a 1-minute interval (floor to nearest minute)
         const intervalTimestamp = Math.floor(timestamp / 60000) * 60000;
-        // Convert to base36 for shorter URL
         return intervalTimestamp.toString(36);
       }
 
@@ -44,14 +136,22 @@
         const timestamp = now.getTime();
         const token = generateToken(timestamp);
         
-        // Create URL with token
         const url = `https://t.me/loyalty_coffee_bot?start=order_${token}`;
-        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(url)}`;
+        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`;
 
         const qrCodeImg = document.getElementById("qr-code");
         qrCodeImg.src = qrCodeUrl;
 
-        document.getElementById("timestamp").textContent = now.toLocaleString();
+        document.getElementById("timestamp").textContent = `Updated: ${now.toLocaleTimeString()}`;
+        
+        // Reset progress bar
+        const progressBar = document.getElementById("progress-bar");
+        progressBar.style.width = "0%";
+        
+        // Animate progress bar
+        setTimeout(() => {
+          progressBar.style.width = "100%";
+        }, 50);
       }
 
       const delay = 1000 * 60; // 60 seconds
