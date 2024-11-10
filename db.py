@@ -13,7 +13,7 @@ uri = f"mongodb+srv://saidaliyevjahongir:{db_password}@cluster0.jwhlb.mongodb.ne
 client = MongoClient(uri, server_api=ServerApi('1'), tls=True, tlsAllowInvalidCertificates=True)
 db = client["AIPM"]
 
-users_collection = db["users"] # ['whatsapp_number', 'date']
+users_collection = db["users"]
 
 # Send a ping to confirm a successful connection
 try:
