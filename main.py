@@ -27,12 +27,16 @@ logger = logging.getLogger(__name__)
 def is_valid_token(token):
     """Validate if the token is from the current time interval"""
     try:
+        print(token)
         # Convert base36 token back to timestamp
         token_timestamp = int(token, 36)
+        print(token_timestamp)
         current_timestamp = int(time.time() * 1000)  # Convert to milliseconds
+        print(current_timestamp)
         
         # Get the current interval timestamp
         current_interval = (current_timestamp // 60000) * 60000
+        print(current_interval)
         
         # Token is valid if it's from the current interval
         return token_timestamp == current_interval
