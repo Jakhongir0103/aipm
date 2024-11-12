@@ -102,7 +102,7 @@
 
     <script>
       function generateToken(timestamp) {
-        const deadlineTimestamp = timestamp+60000;
+        const deadlineTimestamp = timestamp + 90000; // 90 seconds deadline
         return deadlineTimestamp.toString(36);
       }
 
@@ -118,7 +118,7 @@
         qrCodeImg.src = qrCodeUrl;
       }
 
-      const delay = 1000 * 60; // 60 seconds
+      const delay = 1000 * 60; // update every 60 seconds
       setInterval(updateQRCode, delay);
       updateQRCode(); // Initialize the QR code
     </script>
