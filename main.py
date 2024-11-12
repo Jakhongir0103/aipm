@@ -148,7 +148,7 @@ async def process_order(update: Update, context: ContextTypes.DEFAULT_TYPE, repl
             "transaction_datetime": datetime.now(),
             "redeem": True
         })
-        message = "You've redeemed your free coffee! Counter has been reset. Start collecting again! ☕"
+        message = "Enjoy your coffee! ☕️\n\nStart collecting again!"
     else:  # Normal point accumulation
         user_points.update_one(
             {"user_id": user_id},
