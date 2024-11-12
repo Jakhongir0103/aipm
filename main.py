@@ -1,6 +1,7 @@
 import os
 import time
 import logging
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.error import BadRequest
@@ -11,7 +12,8 @@ from telegram.ext import (
     ContextTypes,
 )
 
-from db import users_collection
+from pymongo import DESCENDING
+from db import user_points, user_transactions
 
 # Load environment variables
 load_dotenv()
@@ -27,14 +29,11 @@ logger = logging.getLogger(__name__)
 def is_valid_token(deadline_token):
     """Validate if the token is from the current time interval"""
     try:
-        print(deadline_token)
         # Convert base36 token back to timestamp
         deadline_token_timestamp = int(deadline_token, 36)
-        print(deadline_token_timestamp)
         current_timestamp = int(time.time() * 1000)  # Convert to milliseconds
-        print(current_timestamp)
         
-        # Token is valid if it's from the current interval
+        # Token is valid if it's within the deadline
         return current_timestamp < deadline_token_timestamp
     except ValueError:
         return False
@@ -45,12 +44,25 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     args = context.args  # This will contain any parameters passed with the start command
     
     # Initialize user in database if not exists
-    if not users_collection.find_one({"user_id": user_id}):
-        users_collection.insert_one({
+    is_user = user_points.find_one({"user_id": user_id})
+    print(is_user)
+    if not is_user:
+        user_points.insert_one({
             "user_id": user_id,
             "points": 0,
             "total_rewards": 0
         })
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=(
+                "🎉 Welcome to our Coffee Loyalty Program! 🎉\n"
+                "Earn points by scanning QR codes with every coffee you buy!\n\n"
+                "Every 5 coffees = 1 FREE coffee! 🎁\n\n"
+                "Here's how it works:\n"
+                "1️⃣ Scan the QR code at checkout to earn points!\n"
+                "2️⃣ Collect 5 points and enjoy a FREE coffee on us! ☕️"
+            )
+        )
     
     # Create keyboard with Check Status button
     keyboard = [[InlineKeyboardButton("Check Status", callback_data='check_status')]]
@@ -64,10 +76,26 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             
             # Validate the token
             if is_valid_token(token):
-                # Token is valid, process the order
-                await process_order(update, context, reply_markup)
+                # Fetch the latest transaction for the user
+                last_transaction = user_transactions.find_one({"user_id": user_id}, sort=[("transaction_datetime", DESCENDING)])
+
+                if last_transaction:
+                    last_transaction_time = last_transaction["transaction_datetime"]
+                    current_time = datetime.now()
+
+                    # Check if at least 1 minute has passed since the last scan
+                    if current_time >= last_transaction_time + timedelta(minutes=1):
+                        await process_order(update, context, reply_markup)
+                    else:
+                        await context.bot.send_message(
+                            chat_id=update.effective_chat.id,
+                            text="⚠️ You have already scanned this QR code. Please scan the newly displayed QR code after a few minutes.",
+                            reply_markup=reply_markup
+                        )
+                else:
+                    # No previous transaction, so proceed with order processing
+                    await process_order(update, context, reply_markup)
             else:
-                # Token is expired
                 await context.bot.send_message(
                     chat_id=update.effective_chat.id,
                     text="⚠️ This QR code has expired. Please scan the currently displayed QR code.",
@@ -82,39 +110,55 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
     else:
         # Regular start command
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="Welcome to our Coffee Loyalty Program! Scan QR codes to earn points. Every 5 coffees = 1 free coffee!",
-            reply_markup=reply_markup
-        )
+        if is_user:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Hope you are enjoying your Coffee with us! Every 5 coffees = 1 free coffee!",
+                reply_markup=reply_markup
+            )
 
 async def process_order(update: Update, context: ContextTypes.DEFAULT_TYPE, reply_markup: InlineKeyboardMarkup):
     """Process an order and update points"""
     user_id = update.effective_user.id
-    user = users_collection.find_one({"user_id": user_id})
+    user = user_points.find_one({"user_id": user_id})
     current_points = user["points"]
     
     # Handle different point scenarios
     if current_points == 4:  # User has 4 points, this is their 5th coffee
-        users_collection.update_one(
+        user_points.update_one(
             {"user_id": user_id},
             {"$set": {"points": 5}}
         )
+        user_transactions.insert_one({
+            "user_id": user_id,
+            "transaction_datetime": datetime.now(),
+            "redeem": False
+        })
         message = "Congratulations! You've earned a free coffee! 🎉 Use it on your next visit!"
     elif current_points == 5:  # User is redeeming their free coffee
-        users_collection.update_one(
+        user_points.update_one(
             {"user_id": user_id},
             {
                 "$set": {"points": 0},
                 "$inc": {"total_rewards": 1}
             }
         )
+        user_transactions.insert_one({
+            "user_id": user_id,
+            "transaction_datetime": datetime.now(),
+            "redeem": True
+        })
         message = "You've redeemed your free coffee! Counter has been reset. Start collecting again! ☕"
     else:  # Normal point accumulation
-        users_collection.update_one(
+        user_points.update_one(
             {"user_id": user_id},
             {"$inc": {"points": 1}}
         )
+        user_transactions.insert_one({
+            "user_id": user_id,
+            "transaction_datetime": datetime.now(),
+            "redeem": False
+        })
         new_points = current_points + 1
         remaining = 5 - new_points
         message = f"You now have {new_points}/5 points! {remaining} more to go for a free coffee! ⭐"
@@ -131,7 +175,7 @@ async def check_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     
     user_id = update.effective_user.id
-    user = users_collection.find_one({"user_id": user_id})
+    user = user_points.find_one({"user_id": user_id})
     
     # Create keyboard with Check Status button
     keyboard = [[InlineKeyboardButton("Check Status", callback_data='check_status')]]
@@ -147,7 +191,7 @@ async def check_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if points == 5:
             message = "You have a free coffee waiting! Visit us to redeem it! 🎉"
         else:
-            message = f"You currently have {points}/5 points. {remaining} more to go for a free coffee!\n\nTotal rewards earned: {total_rewards} ☕"
+            message = f"You currently have {points}/5 points. {remaining} more to go for a free coffee!\n\nTotal number of coffees earned: {total_rewards} ☕"
     
     # Include reply_markup in edit_message_text to keep the button
     try:
