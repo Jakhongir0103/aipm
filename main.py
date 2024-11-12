@@ -45,12 +45,24 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # Initialize user in database if not exists
     is_user = user_points.find_one({"user_id": user_id})
+    print(is_user)
     if not is_user:
         user_points.insert_one({
             "user_id": user_id,
             "points": 0,
             "total_rewards": 0
         })
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=(
+                "🎉 Welcome to our Coffee Loyalty Program! 🎉\n"
+                "Earn points by scanning QR codes with every coffee you buy!\n\n"
+                "Every 5 coffees = 1 FREE coffee! 🎁\n\n"
+                "Here's how it works:\n"
+                "1️⃣ Scan the QR code at checkout to earn points!\n"
+                "2️⃣ Collect 5 points and enjoy a FREE coffee on us! ☕️"
+            )
+        )
     
     # Create keyboard with Check Status button
     keyboard = [[InlineKeyboardButton("Check Status", callback_data='check_status')]]
@@ -102,19 +114,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text="Hope you are enjoying your Coffee with us! Every 5 coffees = 1 free coffee!",
-                reply_markup=reply_markup
-            )
-        else:
-            await context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=(
-                    "🎉 Welcome to our Coffee Loyalty Program! 🎉\n"
-                    "Earn points by scanning QR codes with every coffee you buy!\n\n"
-                    "Every 5 coffees = 1 FREE coffee! 🎁\n\n"
-                    "Here's how it works:\n"
-                    "1️⃣ Scan the QR code at checkout to earn points!\n"
-                    "2️⃣ Collect 5 points and enjoy a FREE coffee on us! ☕️"
-                ),
                 reply_markup=reply_markup
             )
 
@@ -192,7 +191,7 @@ async def check_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if points == 5:
             message = "You have a free coffee waiting! Visit us to redeem it! 🎉"
         else:
-            message = f"You currently have {points}/5 points. {remaining} more to go for a free coffee!\n\nTotal rewards earned: {total_rewards} ☕"
+            message = f"You currently have {points}/5 points. {remaining} more to go for a free coffee!\n\nTotal number of coffees earned: {total_rewards} ☕"
     
     # Include reply_markup in edit_message_text to keep the button
     try:
