@@ -107,7 +107,7 @@
           const response = await fetch("http://localhost:8000/generate-token");
           const { token, timestamp } = await response.json();
 
-          const url = `https://t.me/loyalty_coffee_bot?start=order_${token}`;
+          const url = `https://t.me/loyalty_coffee_bot?start=${token}`;
           const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
             url
           )}`;

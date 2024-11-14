@@ -1,9 +1,7 @@
-import base64
-import os
 import time
 
-from cryptography.fernet import Fernet
 from dotenv import load_dotenv
+from encrypt_token import encrypt_timestamp
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -20,8 +18,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-SECRET_KEY = os.environ["SECRET_TOKEN_ENCRYPTION_KEY"]
-fernet = Fernet(SECRET_KEY.encode())
 
 TOKEN_TIME_TO_LIVE_SECONDS = 90
 
@@ -29,15 +25,10 @@ TOKEN_TIME_TO_LIVE_SECONDS = 90
 @app.get("/generate-token")
 async def generate_token():
     try:
-        timestamp = int(time.time())  # Current timestamp in seconds
+        timestamp = int(time.time())
         deadline_timestamp = timestamp + TOKEN_TIME_TO_LIVE_SECONDS
 
-        # Convert timestamp to bytes and encrypt
-        timestamp_bytes = str(deadline_timestamp).encode()
-        encrypted_timestamp = fernet.encrypt(timestamp_bytes)
-
-        # Convert to base64 for URL-safe string
-        token = base64.urlsafe_b64encode(encrypted_timestamp).decode()
+        token = encrypt_timestamp(deadline_timestamp)
 
         return {"token": token, "timestamp": timestamp}
     except Exception as e:

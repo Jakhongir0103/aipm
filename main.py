@@ -1,4 +1,3 @@
-import base64
 import logging
 import os
 import time
@@ -17,6 +16,7 @@ from telegram.ext import (
 )
 
 from db import user_points, user_transactions
+from server.encrypt_token import decrypt_timestamp
 
 # Load environment variables
 load_dotenv()
@@ -34,10 +34,8 @@ logger = logging.getLogger(__name__)
 def is_valid_token(token):
     """Validate if the token is from the current time interval"""
     try:
-        # Decode base64 token
-        encrypted_data = base64.urlsafe_b64decode(token.encode())
-        # Decrypt the timestamp
-        decrypted_timestamp = int(fernet.decrypt(encrypted_data).decode())
+        decrypted_timestamp = decrypt_timestamp(token)
+
         current_timestamp = int(time.time())
 
         # Token is valid if current time is before deadline
@@ -76,10 +74,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     # Check if this is a QR code scan
-    if args and args[0].startswith("order_"):
-        # Extract token from the parameter
+    if args:
+        # Extract token directly without splitting
         try:
-            token = args[0].split("_")[1]
+            token = args[0]
 
             # Validate the token
             if is_valid_token(token):
@@ -107,7 +105,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 await context.bot.send_message(
                     chat_id=update.effective_chat.id,
-                    text="⚠️ This QR code has expired. Please scan the currently displayed QR code.",
+                    text="⚠️ This QR code has expired or is invalid. Please scan the currently displayed QR code.",
                     reply_markup=reply_markup,
                 )
         except IndexError:
