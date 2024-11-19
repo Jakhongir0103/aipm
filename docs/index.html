@@ -16,7 +16,8 @@
         align-items: center;
         justify-content: center;
         min-height: 100vh;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, sans-serif;
         background-color: #f5f5f5;
       }
 
@@ -101,21 +102,28 @@
     </div>
 
     <script>
-      function generateToken(timestamp) {
-        const deadlineTimestamp = timestamp + 90000; // 90 seconds deadline
-        return deadlineTimestamp.toString(36);
-      }
+      async function updateQRCode() {
+        try {
+          const response = await fetch("http://localhost:8000/generate-token");
+          const { token, timestamp } = await response.json();
 
-      function updateQRCode() {
-        const now = new Date();
-        const timestamp = now.getTime();
-        const deadlineTtoken = generateToken(timestamp);
-        
-        const url = `https://t.me/loyalty_coffee_bot?start=order_${deadlineTtoken}`;
-        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`;
+          const url = `https://t.me/loyalty_coffee_bot?start=${token}`;
+          const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+            url
+          )}`;
 
-        const qrCodeImg = document.getElementById("qr-code");
-        qrCodeImg.src = qrCodeUrl;
+          const qrCodeImg = document.getElementById("qr-code");
+          qrCodeImg.src = qrCodeUrl;
+
+          // Update timestamp display
+          document.getElementById(
+            "timestamp"
+          ).textContent = `Last updated: ${new Date(
+            timestamp * 1000
+          ).toLocaleTimeString()}`;
+        } catch (error) {
+          console.error("Error updating QR code:", error);
+        }
       }
 
       const delay = 1000 * 60; // update every 60 seconds
